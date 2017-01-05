@@ -1,0 +1,47 @@
+#install 2 packages twitterR and RCurl
+
+install.packages("twitterR")
+install.packages("RCurl")
+
+#Load the two packages
+require(twitteR)
+require(RCurl)
+require(tm)
+require(wordcloud)
+
+#Make OAuth connection with the twitter account
+consumer_key <- 'XX'
+consumer_secret <- 'XX'
+access_token <- 'XX'
+access_secret <- 'XX'
+
+setup_twitter_oauth(consumer_key,consumer_secret,access_token,access_secret)
+
+#Pull the tweets now
+seacrString <- "Oxygen"
+newTweets <- searchTwitter (seacrString, n=1000, lang="en")
+
+#We can view the tweets by displaying tweets
+#we can see the structure of the tweets by using str(tweets)
+
+#converting to character vector for corpus
+newTweets_text <- sapply(newTweets, function(x) x$getText())
+
+#create corpus from vector of tweets
+my_corpus <- Corpus(VectorSource(newTweets_text))
+MyCorpus <- tm_map(MyCorpus,
+                     content_transformer(function(x) iconv(x, to='UTF-8-MAC', sub='byte')),
+                     mc.cores=1)
+#clean the data
+require(tm)
+MyCorpus <- tm_map(my_corpus,content_transformer(function(x) iconv(x, to='UTF-8-MAC', sub='byte')),  mc.cores=1)
+clean_data <- tm_map(MyCorpus, removePunctuation)
+clean_data <- tm_map(clean_data, content_transformer(tolower))
+clean_data <- tm_map(clean_data, removeWords, stopwords("english"))
+clean_data <- tm_map(clean_data, removeNumbers)
+clean_data <- tm_map(clean_data, stripWhitespace)
+#clean_data <- tm_map(clean_data, removeWords, c(seacrString))
+
+#Usinf brewer for color
+pal2<-brewer.pal(8,"Dark2")
+wordcloud(clean_data, random.order=F,scale =c(1,3), color=TRUE, colors=pal2)
